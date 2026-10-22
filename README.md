@@ -1,0 +1,128 @@
+# Option Chain in Excel
+
+Live NIFTY, BANKNIFTY, FINNIFTY, MIDCPNIFTY and SENSEX option chains inside an Excel workbook, refreshed with **Data ▸ Refresh All**.
+
+Data comes from the free Upstox API. No scraping, no subscription, no macros.
+
+## Status
+
+| Phase | State |
+|---|---|
+| Auth (`src/auth.py`) | Done |
+| Upstox client (`src/upstox.py`) | Done |
+| Analytics (PCR, max pain) | Done |
+| Local service on `127.0.0.1:8765` | Done |
+| `OptionChain.xlsx` shell | Done — verified with live data (all five chains) |
+
+See `PLAN.md` for the full design, scope and rationale.
+
+## Requirements
+
+- Python 3.10+
+- An Upstox account (free, KYC) and an API app
+- Excel 2016+ with Power Query
+
+## Setup
+
+1. Install dependencies:
+
+   ```powershell
+   python -m pip install -r requirements.txt
+   ```
+
+2. Create an API app at <https://account.upstox.com/developer/apps>:
+   - Redirect URI: `http://127.0.0.1:8765/callback`
+   - Copy the Client ID and Client Secret
+
+3. Create your local config:
+
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+
+   Fill in `UPSTOX_CLIENT_ID` and `UPSTOX_CLIENT_SECRET`.
+
+4. Log in. Easiest is with the service running (`Start Option Chain Server.bat`),
+   then open <http://127.0.0.1:8765/login>. Or use the CLI. The login flow binds port 8765 itself, so stop the service first:
+
+   ```powershell
+   python -m src.auth login --serve
+   ```
+
+5. Check the token:
+
+   ```powershell
+   python -m src.auth status
+   ```
+
+   Do this once each trading day, before you need the workbook.
+
+## Service
+
+Run `Start Option Chain Server.bat` (or `python -m src.server`) and open
+<http://127.0.0.1:8765> for a status page.
+
+| Endpoint | Purpose |
+|---|---|
+| `/health` | Service, token and per-symbol cache state |
+| `/symbols` | Index names and instrument keys |
+| `/expiries/{symbol}` | Available expiries |
+| `/chain/{symbol}` | Full normalised chain plus summary |
+| `/summary/{symbol}` | PCR, max pain, ATM, OI levels |
+| `/refresh` | Force-refresh all five (add `?symbol=NIFTY` for one) |
+| `/login`, `/callback` | Upstox OAuth |
+| `/docs` | FastAPI's generated reference |
+
+Cached 10 s (`OC_TTL`). If a fetch fails, the last good snapshot is served with
+`"stale": true` instead of an error.
+
+## Commands
+
+| Command | Purpose |
+|---|---|
+| `python -m src.auth login [--open] [--serve]` | Start the Upstox login flow |
+| `python -m src.auth exchange <code>` | Manually exchange a pasted code |
+| `python -m src.auth status` | Show token state, never prints the token |
+| `python -m src.auth logout` | Delete stored tokens |
+| `python -m pytest -q` | Run the tests (no network needed) |
+
+## Workbook
+
+`OptionChain.xlsx` is built from Python and then finished through Excel COM, which is
+what adds the Power Query connections:
+
+```powershell
+python -m src.build_workbook
+```
+
+| Sheet | Contents |
+|---|---|
+| Read Me | Setup, column guide, definitions, troubleshooting |
+| Summary | One row per index: PCR, max pain, OI support/resistance, ATM IV, freshness |
+| NIFTY … SENSEX | Calls left, strike centre, puts right; ITM shading, OI data bars |
+
+The workbook starts empty (headers only) until a token exists. Press
+**Data ▸ Refresh All** after logging in. `--no-refresh` skips the initial pull.
+
+Build or verify against sample data without a broker account:
+
+```powershell
+python -m scripts.mock_server        # fixtures on 8765, no auth
+python -m src.build_workbook
+python -m scripts.verify_workbook    # tables, headers, freeze panes, formats
+```
+
+## Tokens
+
+- The access token expires at **03:30 IST every day**. Upstox's current API returns no refresh token, so there is no silent renewal — log in once each trading day (~2 minutes).
+- Expiry keywords (`current_week`, `next_week`, …) are resolved against `/v2/option/contract` before the chain call. Upstox's own keywords can point at a contract that has already expired, since NSE weeklies expire on Tuesday and BSE on Thursday.
+- Stored in `data/tokens.json`, which is git-ignored. Never commit or share it.
+
+## Sharing
+
+The code and the workbook are yours to share. Two things are not:
+
+- `data/tokens.json`, `.env`, and your Client Secret.
+- The data feed itself: Upstox licenses it to the account holder for personal use. Passing a snapshot to a friend is normal; feeding a public service or reselling it is not.
+
+Anyone running this needs their own Upstox app and their own daily login.

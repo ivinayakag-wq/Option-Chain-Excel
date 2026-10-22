@@ -1,0 +1,188 @@
+{
+  "status": "success",
+  "data": [
+    {
+      "expiry": "2026-10-27",
+      "pcr": 0.82,
+      "strike_price": 22700,
+      "underlying_key": "NSE_INDEX|Nifty 50",
+      "underlying_spot_price": 22743.5,
+      "call_options": {
+        "instrument_key": "NSE_FO|44001",
+        "market_data": {
+          "ltp": 120.5,
+          "volume": 150000,
+          "oi": 1200000,
+          "close_price": 100.0,
+          "bid_price": 119.5,
+          "bid_qty": 75,
+          "ask_price": 121.0,
+          "ask_qty": 150,
+          "prev_oi": 1150000
+        },
+        "option_greeks": {
+          "vega": 12.34,
+          "theta": -8.12,
+          "gamma": 0.0004,
+          "delta": 0.52,
+          "iv": 11.2,
+          "pop": 48.0
+        }
+      },
+      "put_options": {
+        "instrument_key": "NSE_FO|44002",
+        "market_data": {
+          "ltp": 63.25,
+          "volume": 210000,
+          "oi": 1450000,
+          "close_price": 70.0,
+          "bid_price": 62.8,
+          "bid_qty": 300,
+          "ask_price": 63.6,
+          "ask_qty": 75,
+          "prev_oi": 1400000
+        },
+        "option_greeks": {
+          "vega": 11.9,
+          "theta": -7.4,
+          "gamma": 0.0005,
+          "delta": -0.47,
+          "iv": 10.8,
+          "pop": 52.0
+        }
+      }
+    },
+    {
+      "expiry": "2026-10-27",
+      "pcr": 0.82,
+      "strike_price": 22750,
+      "underlying_key": "NSE_INDEX|Nifty 50",
+      "underlying_spot_price": 22743.5,
+      "call_options": {
+        "instrument_key": "NSE_FO|44003",
+        "market_data": {
+          "ltp": 95.1,
+          "volume": 320000,
+          "oi": 900000,
+          "close_price": 88.0,
+          "bid_price": 94.5,
+          "bid_qty": 150,
+          "ask_price": 95.8,
+          "ask_qty": 225,
+          "prev_oi": 850000
+        },
+        "option_greeks": {
+          "vega": 12.0,
+          "theta": -8.9,
+          "gamma": 0.0006,
+          "delta": 0.48,
+          "iv": 10.9,
+          "pop": 46.0
+        }
+      },
+      "put_options": {
+        "instrument_key": "NSE_FO|44004",
+        "market_data": {
+          "ltp": 78.4,
+          "volume": 180000,
+          "oi": 760000,
+          "close_price": 74.0,
+          "bid_price": 77.9,
+          "bid_qty": 75,
+          "ask_price": 78.9,
+          "ask_qty": 150,
+          "prev_oi": 720000
+        },
+        "option_greeks": {
+          "vega": 12.1,
+          "theta": -7.8,
+          "gamma": 0.0005,
+          "delta": -0.5,
+          "iv": 10.4,
+          "pop": 50.0
+        }
+      }
+    },
+    {
+      "expiry": "2026-10-27",
+      "pcr": 0.82,
+      "strike_price": 22800,
+      "underlying_key": "NSE_INDEX|Nifty 50",
+      "underlying_spot_price": 22743.5,
+      "call_options": {
+        "instrument_key": "NSE_FO|44005",
+        "market_data": {
+          "ltp": 72.2,
+          "volume": 410000,
+          "oi": 1650000,
+          "close_price": 80.0,
+          "bid_price": 71.8,
+          "bid_qty": 300,
+          "ask_price": 72.8,
+          "ask_qty": 75,
+          "prev_oi": 1580000
+        },
+        "option_greeks": {
+          "vega": 11.4,
+          "theta": -9.2,
+          "gamma": 0.0007,
+          "delta": 0.41,
+          "iv": 10.6,
+          "pop": 44.0
+        }
+      },
+      "put_options": {
+        "instrument_key": "NSE_FO|44006",
+        "market_data": {
+          "ltp": 104.6,
+          "volume": 265000,
+          "oi": 1180000,
+          "close_price": 92.0,
+          "bid_price": 104.0,
+          "bid_qty": 150,
+          "ask_price": 105.2,
+          "ask_qty": 300,
+          "prev_oi": 1100000
+        },
+        "option_greeks": {
+          "vega": 12.6,
+          "theta": -7.1,
+          "gamma": 0.0004,
+          "delta": -0.58,
+          "iv": 11.5,
+          "pop": 56.0
+        }
+      }
+    },
+    {
+      "expiry": "2026-10-27",
+      "pcr": 0.82,
+      "strike_price": 22850,
+      "underlying_key": "NSE_INDEX|Nifty 50",
+      "underlying_spot_price": 22743.5,
+      "call_options": {
+        "instrument_key": "NSE_FO|44007",
+        "market_data": {
+          "ltp": 51.3,
+          "volume": 98000,
+          "oi": 640000,
+          "close_price": 60.0,
+          "bid_price": 50.9,
+          "bid_qty": 75,
+          "ask_price": 51.9,
+          "ask_qty": 225,
+          "prev_oi": 610000
+        },
+        "option_greeks": {
+          "vega": 10.8,
+          "theta": -9.6,
+          "gamma": 0.0008,
+          "delta": 0.33,
+          "iv": 10.3,
+          "pop": 41.0
+        }
+      },
+      "put_options": null
+    }
+  ]
+}
