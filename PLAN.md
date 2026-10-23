@@ -241,3 +241,63 @@ Verification gates:
 5. Delete/expire the token → workbook shows `AUTH_REQUIRED` and a working login URL.
 
 Nothing is committed to git unless you ask.
+
+---
+
+## 11. Live mode (v2)
+
+The v1 workbook is a snapshot: it updates when you press Refresh All. v2 pushes data into a second workbook, `OptionChain Live.xlsx`, every half second while the market is open. `OptionChain.xlsx` stays as it is and remains the fallback.
+
+### What forced the design
+
+Measured against the live API on 2026-10-23:
+
+| Fact | Number | Consequence |
+|---|---|---|
+| Option keys in one expiry, five indices | 1,632 | Full chain cannot be polled cheaply |
+| Keys per market-quote call | 500 (601 → HTTP 400) | Four calls per full pass |
+| Latency of a 500-key quote call | ~1.6 s | REST cannot serve 1–3 s refresh |
+| Standard API budget | 2,000 / 30 min = 1.1 req/s | Four calls per 1 s cycle is 4× over |
+| V3 feed, `full` mode | LTP, OI, IV, Greeks, depth, prev close | One socket replaces every quote call |
+| Full-mode key limit | 2,000 individual | 1,632 fits, but only if not mixed with other modes |
+
+REST polling is therefore architecturally unable to meet a one-second target. The WebSocket feed is not an optimisation; it is the only transport that fits.
+
+### Subscriptions
+
+The live workbook shows ATM ± 10 strikes (21 rows) per index, so only 215 keys are needed: 5 index keys plus 210 option keys. That is 11% of the feed, leaves the connection far below the 2,000 limit, and keeps decode cost negligible. Everything outside the window is still in memory from the REST chain and is used for PCR and max pain.
+
+### Transport
+
+`src/feed.py` opens a raw `wss://api.upstox.com/v3/feed/market-data-feed` socket with `websocket-client`, sends the `sub` request as a binary frame, and decodes with the protobuf classes bundled in `upstox-python-sdk`. The SDK's own `MarketDataStreamerV3` wrapper was tested and abandoned: it opened connections but never delivered frames through `WebSocketApp`, while the raw socket worked first time. The SDK is still a dependency, but only for `MarketDataFeedV3_pb2`.
+
+Message flow: `FeedResponse` → `MessageToDict` → one `Tick` per instrument key, held in a dict under a lock. Reconnects use exponential backoff (1 s to 10 s), and the subscriber is marked stale after 30 s without a message. Re-subscription after a reconnect sends the full key set again; key changes mid-session are sent as `sub`/`unsub` diffs from the receive loop.
+
+### Excel delivery
+
+`src/excel_writer.py` attaches to the running Excel via `GetActiveObject`, or launches it with `--open`. It writes a 21×21 `Value2` block per sheet, plus a 5×18 Summary block, and refreshes the A2 heartbeat line. Measured cost on the target machine: **~30 ms per sheet**, so five sheets plus Summary is ~180 ms of a 500 ms budget.
+
+Two details that matter:
+
+- Chain sheets have no ListObjects or Power Query connections. Tables fight external writes and add refresh bookkeeping for no benefit.
+- Conditional formatting and data bars are scoped to rows 5–25, not rows 5–2000 as in the v1 workbook. Excel re-evaluates those rules on every write, and the original range was 40× larger than needed.
+
+### Cadence and recentering
+
+- Chain sheets: every 0.5 s. Worst-case staleness on screen is ~0.6 s.
+- Summary: recomputed every 0.5 s from memory, but the full-chain snapshot behind it refreshes over REST every 60 s (five calls per minute, 150 per 30 min). The Age column states that lag.
+- The window is anchored when the service starts. Rows are never inserted or deleted; if spot drifts more than 5 strikes from the anchor, the window is re-sliced, the feed subscription is diffed, and the new edges fill in on the next tick.
+
+### Verification
+
+- 40-second live run: 273 messages, 9,914 ticks, zero reconnects, Excel writes acknowledged every cycle.
+- Workbook read back after save: all five spot values live, 21 strikes per sheet, Summary expiry stored as text, heartbeat line showing tick age.
+- `python -m pytest -q`: 59 tests, covering feed parsing, window math, DOI, recentering, and existing snapshot behaviour.
+
+### Known limits
+
+- Writing replaces cell contents: manual edits in the live workbook are lost within half a second, and the undo stack is cleared.
+- IV and Greeks arrive over the socket but are only as good as Upstox's server-side computation; they are not recomputed locally.
+- If Excel is closed mid-session the service stops writing rather than reopening the file; restart the launcher.
+- The daily 03:30 IST token expiry still applies. The heartbeat line turns red with the login URL when a REST refresh is refused.
+

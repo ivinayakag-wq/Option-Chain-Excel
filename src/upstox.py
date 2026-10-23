@@ -85,6 +85,8 @@ def normalize_chain(
             "strike": _num(item.get("strike_price")),
             "spot": _num(item.get("underlying_spot_price")),
             "lot_size": lot_size,
+            "ce_key": (item.get("call_options") or {}).get("instrument_key", ""),
+            "pe_key": (item.get("put_options") or {}).get("instrument_key", ""),
         }
         for key, value in call.items():
             row[f"ce_{key}"] = value
