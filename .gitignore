@@ -12,3 +12,6 @@ data/cache/
 *.log
 
 patterns/
+
+OptionChain.xlsx
+OptionChain Live.xlsx
