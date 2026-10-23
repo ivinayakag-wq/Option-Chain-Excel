@@ -23,11 +23,43 @@ Data comes from the free Upstox API. No scraping, no subscription, no macros.
 
 See `PLAN.md` for the full design, scope and rationale.
 
+## Specs
+
+| | |
+|---|---|
+| Purpose | Read an index option chain in Excel without pressing refresh, fast enough to act on |
+| Broker | Upstox (free API); designed to swap — see `BROKER.md` |
+| Indices | NIFTY, BANKNIFTY, FINNIFTY, MIDCPNIFTY, SENSEX |
+| Expiry | Nearest weekly/monthly per index, rolled automatically |
+| Strikes shown | ATM ± 10 (21 rows), window re-centres as spot moves |
+| Live transport | WebSocket V3 `full` mode — LTP, OI, volume, IV, Greeks, depth |
+| Subscriptions | 215 instrument keys (5 index + 210 options) |
+| Write cadence | 0.5 s |
+| Observed staleness | ~0.6 s worst case on screen |
+| Excel cost | ~30 ms per sheet write, measured on i5 8th gen / 8 GB |
+| REST usage | chain snapshot per index every 60 s (~5 calls/min) |
+| Token lifetime | until 03:30 IST, then one browser login |
+| Runtime | Python 3.10+ (tested 3.14.6), Windows, Excel 2016+ |
+| Macros | none |
+
+## Two workbooks
+
+Both `.xlsx` files are generated locally and git-ignored — build them after cloning:
+
+| File | Behaviour | Build |
+|---|---|---|
+| `OptionChain Live.xlsx` | Program writes into it every 0.5 s | `python -m src.build_live_workbook` |
+| `OptionChain.xlsx` | Snapshot; **Data ▸ Refresh All** | `python -m src.build_workbook` |
+
+## Other brokers
+
+The repo is Upstox-only, but the broker-specific code is deliberately thin: a chain snapshot (`snapshot()`) and a tick feed (`MarketFeed`). Everything else — analytics, windowing, Excel push, cadence — is neutral. `BROKER.md` documents the field contract, the mapping table, and a porting checklist for Kite, Angel One, Fyers, Dhan and Breeze.
+
 ## Requirements
 
 - Python 3.10+
 - An Upstox account (free, KYC) and an API app
-- Excel 2016+ with Power Query
+- Excel 2016+ (Power Query is only needed for the snapshot workbook)
 
 ## Setup
 
@@ -127,7 +159,7 @@ Stop with Ctrl+C. The workbook is saved on exit.
 
 ## Workbook
 
-Two builders, two files.
+Two builders, two files. Both are git-ignored outputs — nothing here ships a market snapshot.
 
 **`OptionChain Live.xlsx`** — no queries, no tables; a display surface for the push loop:
 
@@ -148,8 +180,9 @@ python -m src.build_workbook
 | Summary | One row per index: PCR, max pain, OI support/resistance, ATM IV, freshness |
 | NIFTY … SENSEX | Calls left, strike centre, puts right; ITM shading, OI data bars |
 
-The workbook starts empty (headers only) until a token exists. Press
-**Data ▸ Refresh All** after logging in. `--no-refresh` skips the initial pull.
+The snapshot workbook starts empty (headers only) until a token exists. Press
+**Data ▸ Refresh All** after logging in. `--no-refresh` skips the initial pull. The
+live workbook fills as soon as `python -m src.live` connects — no queries involved.
 
 Build or verify against sample data without a broker account:
 
